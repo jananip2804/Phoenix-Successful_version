@@ -49,7 +49,7 @@ export const Landing = () => {
           Version 1.0
         </motion.div>
         
-        <h1 className="text-8xl md:text-[150px] font-extrabold tracking-tighter mb-2 text-gradient-flowing drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+        <h1 className="text-8xl md:text-[150px] font-extrabold tracking-tighter mb-2 text-gradient-flowing drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] font-phoenix">
           PHOENIX
         </h1>
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8 text-gradient">

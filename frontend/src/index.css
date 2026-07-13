@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -59,10 +60,14 @@
 }
 
 .text-gradient-flowing {
-  background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899, #3b82f6);
+  background: linear-gradient(90deg, #ff4500, #ffb703, #ff006e, #ff4500);
   background-size: 300% auto;
   animation: gradient-flow 4s linear infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.font-phoenix {
+  font-family: 'Cinzel', serif;
 }
