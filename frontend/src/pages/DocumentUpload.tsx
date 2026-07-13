@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { UploadCloud, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ref, get, update } from 'firebase/database';
+import { rtdb } from '../services/firebase';
 
 export const DocumentUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -33,6 +35,19 @@ export const DocumentUpload = () => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
+          
+          // Update Realtime Database analytics to animate dashboard
+          const analyticsRef = ref(rtdb, 'analytics/main');
+          get(analyticsRef).then((snapshot) => {
+             const data = snapshot.exists() ? snapshot.val() : {};
+             update(analyticsRef, {
+                totalUploads: (data.totalUploads || 0) + 1,
+                processedDocuments: (data.processedDocuments || 0) + 1,
+                keywordsExtracted: (data.keywordsExtracted || 0) + 5,
+                knowledgeConnections: (data.knowledgeConnections || 0) + 5
+             });
+          }).catch(console.error);
+
           setStatus('success');
           return 100;
         }
