@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Database, Link as LinkIcon, Hash } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ref, onValue } from 'firebase/database';
+import { rtdb } from '../services/firebase';
 
 const StatCard = ({ title, value, icon: Icon, delay }: { title: string, value: string | number, icon: any, delay: number }) => (
   <motion.div 
@@ -29,16 +31,20 @@ export const Dashboard = () => {
   });
 
   useEffect(() => {
-    // In a real app, fetch from backend /api/analytics
-    // Mocking for now before connecting API
-    setTimeout(() => {
-      setStats({
-        totalUploads: 124,
-        knowledgeConnections: 892,
-        keywordsExtracted: 3450,
-        processedDocuments: 124
-      });
-    }, 1000);
+    const analyticsRef = ref(rtdb, 'analytics/main');
+    const unsubscribe = onValue(analyticsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setStats({
+          totalUploads: data.totalUploads || 0,
+          knowledgeConnections: data.knowledgeConnections || 0,
+          keywordsExtracted: data.keywordsExtracted || 0,
+          processedDocuments: data.processedDocuments || 0
+        });
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (

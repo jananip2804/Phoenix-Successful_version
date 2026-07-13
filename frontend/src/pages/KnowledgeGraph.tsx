@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from 'react';
 import { 
   ReactFlow, 
   Controls, 
@@ -8,23 +9,43 @@ import {
   MiniMap
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-
-const initialNodes = [
-  { id: 'doc_1', position: { x: 250, y: 100 }, data: { label: 'Q3 Financial Report.pdf' }, type: 'default', style: { background: 'rgba(59, 130, 246, 0.2)', color: 'white', border: '1px solid #3b82f6', borderRadius: '8px', padding: '10px' } },
-  { id: 'doc_2', position: { x: 550, y: 150 }, data: { label: 'Climate Study 2025.csv' }, style: { background: 'rgba(59, 130, 246, 0.2)', color: 'white', border: '1px solid #3b82f6', borderRadius: '8px', padding: '10px' } },
-  { id: 'kw_1', position: { x: 400, y: 250 }, data: { label: '#Revenue' }, style: { background: 'rgba(168, 85, 247, 0.2)', color: 'white', border: '1px solid #a855f7', borderRadius: '20px', padding: '8px 16px' } },
-  { id: 'kw_2', position: { x: 300, y: 350 }, data: { label: '#Renewable Energy' }, style: { background: 'rgba(168, 85, 247, 0.2)', color: 'white', border: '1px solid #a855f7', borderRadius: '20px', padding: '8px 16px' } },
-];
-
-const initialEdges = [
-  { id: 'e1-k1', source: 'doc_1', target: 'kw_1', animated: true, style: { stroke: '#60a5fa' } },
-  { id: 'e1-k2', source: 'doc_1', target: 'kw_2', animated: true, style: { stroke: '#60a5fa' } },
-  { id: 'e2-k2', source: 'doc_2', target: 'kw_2', animated: true, style: { stroke: '#c084fc' } },
-];
+import { ref, onValue } from 'firebase/database';
+import { rtdb } from '../services/firebase';
 
 export const KnowledgeGraph = () => {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  useEffect(() => {
+    const graphRef = ref(rtdb, 'graph/main');
+    const unsubscribe = onValue(graphRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.nodes) {
+          setNodes(data.nodes.map((n: any) => ({
+            id: n.id,
+            position: n.position || { x: Math.random() * 500, y: Math.random() * 500 },
+            data: { label: n.label || n.data?.label || 'Node' },
+            type: n.type || 'default',
+            style: n.style || (n.id.startsWith('doc') 
+              ? { background: 'rgba(59, 130, 246, 0.2)', color: 'white', border: '1px solid #3b82f6', borderRadius: '8px', padding: '10px' }
+              : { background: 'rgba(168, 85, 247, 0.2)', color: 'white', border: '1px solid #a855f7', borderRadius: '20px', padding: '8px 16px' })
+          })));
+        }
+        if (data.edges) {
+          setEdges(data.edges.map((e: any) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            animated: e.animated !== undefined ? e.animated : true,
+            style: e.style || { stroke: '#60a5fa' }
+          })));
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [setNodes, setEdges]);
 
   return (
     <div className="h-[800px] w-full glass-panel rounded-3xl overflow-hidden border border-card-border relative">
