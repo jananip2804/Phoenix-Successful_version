@@ -60,17 +60,17 @@ export const Landing = () => {
           Transform forgotten documents into a living, interconnected AI brain. Upload once, discover forever.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-4">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="px-8 py-4 rounded-xl bg-white text-black font-semibold text-lg hover:scale-105 transition-transform duration-300 shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+            className="btn-premium btn-premium-alt px-8 py-4 rounded-xl bg-white text-black font-semibold text-lg hover:bg-gray-100 shadow-[0_0_40px_rgba(255,255,255,0.3)]"
           >
             Enter Phoenix
           </button>
           
           <button 
             onClick={() => navigate('/graph')}
-            className="px-8 py-4 rounded-xl glass-panel text-white font-medium text-lg hover:bg-white/10 transition-colors duration-300"
+            className="btn-premium px-8 py-4 rounded-xl glass-panel text-white font-medium text-lg hover:bg-white/10"
           >
             Explore Knowledge Graph
           </button>

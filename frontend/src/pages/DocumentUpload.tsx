@@ -167,7 +167,7 @@ export const DocumentUpload = () => {
                 <button onClick={() => setFile(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-white">
                   <X size={20} />
                 </button>
-                <button onClick={handleUpload} className="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-600 transition-colors">
+                <button onClick={handleUpload} className="btn-premium px-4 py-2 bg-primary text-white font-medium rounded-lg">
                   Upload
                 </button>
               </div>
