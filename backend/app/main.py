@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import documents
+from app.routers import documents, search, graph, analytics
 
 app = FastAPI(
     title="Project Phoenix API",
@@ -18,6 +18,9 @@ app.add_middleware(
 )
 
 app.include_router(documents.router)
+app.include_router(search.router)
+app.include_router(graph.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 def read_root():

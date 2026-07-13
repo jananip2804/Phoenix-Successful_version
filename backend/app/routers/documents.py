@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from app.database.firestore import firestore_db
 from app.firebase.storage import storage_client
 from app.models.domain import Document
+from app.services.document_service import process_document
 import uuid
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
@@ -30,7 +31,7 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
         doc_id = firestore_db.create_document(doc_data)
         
         # 3. Trigger background processing (Phase 3)
-        # background_tasks.add_task(process_document, doc_id, file_url, content)
+        background_tasks.add_task(process_document, doc_id, file_url, content, file.filename, file.content_type)
         
         return {"message": "Document uploaded successfully", "doc_id": doc_id, "url": file_url}
         
