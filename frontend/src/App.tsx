@@ -8,7 +8,7 @@ import { KnowledgeGraph } from './pages/KnowledgeGraph';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/Phoenix-Successful_version/">
       <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
         <Routes>
           <Route path="/" element={<Landing />} />
