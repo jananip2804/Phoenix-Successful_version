@@ -27,7 +27,7 @@ jobs:
     - name: Install and Build
       working-directory: ./frontend
       run: |
-        npm ci
+        npm install
         npm run build
         cp dist/index.html dist/404.html
         
