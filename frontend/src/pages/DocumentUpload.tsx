@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { UploadCloud, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ref, get, update } from 'firebase/database';
+import { ref, get, update, set } from 'firebase/database';
 import { rtdb } from '../services/firebase';
 
 export const DocumentUpload = () => {
@@ -23,37 +23,92 @@ export const DocumentUpload = () => {
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0]);
+      setStatus('idle');
+      setProgress(0);
     }
   }, []);
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) return;
     setStatus('uploading');
     
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          
-          // Update Realtime Database analytics to animate dashboard
-          const analyticsRef = ref(rtdb, 'analytics/main');
-          get(analyticsRef).then((snapshot) => {
-             const data = snapshot.exists() ? snapshot.val() : {};
-             update(analyticsRef, {
-                totalUploads: (data.totalUploads || 0) + 1,
-                processedDocuments: (data.processedDocuments || 0) + 1,
-                keywordsExtracted: (data.keywordsExtracted || 0) + 5,
-                knowledgeConnections: (data.knowledgeConnections || 0) + 5
-             });
-          }).catch(console.error);
+    // Fake progress interval while uploading
+    const progressInterval = setInterval(() => {
+      setProgress(p => Math.min(p + 10, 90)); // Cap at 90% until done
+    }, 200);
 
-          setStatus('success');
-          return 100;
+    try {
+      const newDocId = `doc_${Date.now()}`;
+      // Extract keywords from filename
+      let newKeywords = file.name.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(' ').filter(w => w.length > 3).slice(0, 3);
+      if (newKeywords.length === 0) newKeywords.push('upload');
+      
+      const newDoc = {
+        filename: file.name,
+        title: file.name.split('.')[0].replace(/[-_]/g, ' '),
+        fileType: file.type || 'unknown',
+        fileSize: file.size,
+        uploadTimestamp: Date.now(),
+        processingStatus: 'completed',
+        documentInsights: {
+          reading_time_minutes: Math.max(1, Math.floor(file.size / 50000)),
+          sentiment: 'neutral',
+          key_entities: newKeywords.map(k => k.charAt(0).toUpperCase() + k.slice(1))
+        },
+        keywords: newKeywords
+      };
+
+      // 1. Save document
+      await set(ref(rtdb, `documents/${newDocId}`), newDoc);
+
+      // 2. Update Graph
+      const graphRef = ref(rtdb, 'graph/main');
+      const graphSnap = await get(graphRef);
+      let nodes = [];
+      let edges = [];
+      if (graphSnap.exists()) {
+        const gData = graphSnap.val();
+        nodes = gData.nodes || [];
+        edges = gData.edges || [];
+      }
+
+      nodes.push({ id: newDocId, label: newDoc.title, type: 'document' });
+      
+      newKeywords.forEach(kw => {
+        const kwId = `kw_${kw}`;
+        if (!nodes.find((n: any) => n.id === kwId)) {
+          nodes.push({ id: kwId, label: kw.charAt(0).toUpperCase() + kw.slice(1), type: 'keyword' });
         }
-        return prev + 10;
+        edges.push({ id: `e_${newDocId}_${kwId}`, source: newDocId, target: kwId });
       });
-    }, 300);
+      
+      await set(graphRef, { nodes, edges });
+
+      // 3. Update Analytics
+      const analyticsRef = ref(rtdb, 'analytics/main');
+      const analyticsSnap = await get(analyticsRef);
+      const data = analyticsSnap.exists() ? analyticsSnap.val() : {};
+      await update(analyticsRef, {
+          totalUploads: (data.totalUploads || 0) + 1,
+          processedDocuments: (data.processedDocuments || 0) + 1,
+          keywordsExtracted: (data.keywordsExtracted || 0) + newKeywords.length,
+          knowledgeConnections: (data.knowledgeConnections || 0) + newKeywords.length
+      });
+
+      clearInterval(progressInterval);
+      setProgress(100);
+      setStatus('success');
+      
+      setTimeout(() => {
+        setFile(null);
+        setStatus('idle');
+        setProgress(0);
+      }, 3000);
+    } catch (err) {
+      console.error("Upload failed", err);
+      clearInterval(progressInterval);
+      setStatus('error');
+    }
   };
 
   return (
@@ -80,7 +135,13 @@ export const DocumentUpload = () => {
           <p className="text-muted-foreground">or</p>
           <label className="cursor-pointer px-6 py-3 bg-white text-black font-medium rounded-xl hover:bg-gray-200 transition-colors">
             Browse Files
-            <input type="file" className="hidden" onChange={(e) => e.target.files && setFile(e.target.files[0])} />
+            <input type="file" className="hidden" onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setFile(e.target.files[0]);
+                setStatus('idle');
+                setProgress(0);
+              }
+            }} />
           </label>
         </div>
       </div>
@@ -129,6 +190,13 @@ export const DocumentUpload = () => {
               <div className="flex items-center gap-2 text-green-500 bg-green-500/10 px-3 py-1.5 rounded-lg">
                 <CheckCircle size={18} />
                 <span className="text-sm font-medium">Complete</span>
+              </div>
+            )}
+            
+            {status === 'error' && (
+              <div className="flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1.5 rounded-lg">
+                <X size={18} />
+                <span className="text-sm font-medium">Failed</span>
               </div>
             )}
           </motion.div>
